@@ -4,54 +4,147 @@ A beautiful, modern desktop video downloader with **glassmorphism + minimalist**
 
 Supports **4K, 8K, HDR, 1080p** + audio-only from **YouTube, TikTok, Instagram, Twitter/X, Vimeo, 1000+ sites** via yt-dlp.
 
-![Modern UI](https://via.placeholder.com/900x520/181825/89b4fa?text=VideoFlow+Modern+Glassmorphism+UI)
+**✨ Optimized for fast downloads** with concurrent fragment downloading and aria2c integration.
 
 ---
 
-## ✨ What's New (Modern UI Upgrade)
+## 🚀 Installation on Linux Mint
 
-### Visual Aesthetic
-- **Glassmorphism** design: frosted glass cards, subtle borders, layered depth
-- **Catppuccin Mocha** inspired dark palette
-- Clean rounded corners, soft shadows, and elegant typography (Segoe UI)
-- Modern iconography (emoji + symbols) instead of plain text
+### Step 1: Install System Dependencies
 
-### Core Layout
-- **Smart Input Bar** — prominent URL field + real-time platform detection (YouTube → 🎬, TikTok → 🎵, etc.)
-- **Dynamic Preview Card** — thumbnail preview (play icon), title, uploader, duration + rich quality selector
-- **High Quality Options** — Best (auto), 8K, 4K HDR, 1440p, 1080p, etc.
-- **Audio / Video Segmented Toggle** — instant mode switching
-
-### Queue Management
-- Beautiful drag-reorderable queue list
-- Per-item mini progress bars + status badges
-- "Add Current", "Start Queue", drag ordering, clear
-
-### Interactive Feedback
-- **Custom Canvas Progress Bar** — animated glass progress + live **Speed • ETA • Downloaded / Total**
-- Smooth state transitions (idle → analyzing → downloading → completed)
-- **Toast notifications** (non-blocking, bottom-right)
-- Hover micro-interactions on all buttons and cards
-
-### UX Enhancements
-- **One-click "Paste & Download"**
-- **Slide-in Settings panel** (from right)
-- Keyboard shortcuts (`Ctrl+V`, `Enter`, `Esc`)
-- Auto folder opening
-
----
-
-## 🚀 Quick Start
+Open a terminal and run:
 
 ```bash
-# Install dependencies
-pip install yt-dlp pillow requests
+# Update package list
+sudo apt update
 
-# Run the modern GUI
+# Install Python 3, pip, tkinter (for GUI), git, ffmpeg, and aria2c (for faster downloads)
+sudo apt install -y python3 python3-pip python3-tk git ffmpeg aria2
+```
+
+### Step 2: Clone or Download the Project
+
+If you have the project as a zip file, extract it. Or clone from git:
+
+```bash
+cd ~
+git clone <repository-url> video-downloader
+cd video-downloader
+```
+
+### Step 3: Create Virtual Environment (Recommended)
+
+```bash
+# Create virtual environment
+python3 -m venv venv
+
+# Activate it
+source venv/bin/activate
+```
+
+### Step 4: Install Python Dependencies
+
+```bash
+pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+---
+
+## 📋 Quick Start
+
+### Launch the GUI
+
+```bash
+# Make sure you're in the project directory and venv is activated
+python main.py
+```
+
+Or directly:
+
+```bash
 python gui.py
 ```
 
-> **Note**: On Linux you may need `sudo apt install python3-tk` (or equivalent).
+### Use the CLI
+
+```bash
+# Basic download (best quality)
+python cli.py https://youtube.com/watch?v=VIDEO_ID
+
+# List available formats
+python cli.py -l https://youtube.com/watch?v=VIDEO_ID
+
+# Download specific quality (e.g., 1080p)
+python cli.py -f 1080p https://youtube.com/watch?v=VIDEO_ID
+
+# Download audio only
+python cli.py -a https://youtube.com/watch?v=VIDEO_ID
+
+# Download to specific folder
+python cli.py -o ~/Videos https://youtube.com/watch?v=VIDEO_ID
+```
+
+---
+
+## ⚡ Maximizing Download Speed
+
+The downloader is optimized for speed with these built-in features:
+
+- **Concurrent fragment downloads** (4 parallel connections by default)
+- **aria2c integration** for maximum throughput (auto-detected)
+- Smart retry logic with exponential backoff
+- Optimized HTTP chunk sizes (10MB) for better network utilization
+
+### Additional Tips:
+
+1. **Ensure aria2c is installed** (already included in Step 1 above)
+2. **Use wired Ethernet** for more stable high-speed downloads
+3. **Close bandwidth-heavy apps** during large downloads
+
+### Advanced: Increase Concurrent Connections
+
+For very fast internet connections, edit `downloader.py`:
+
+```python
+'concurrent_fragment_downloads': 8,  # Increase from 4 to 8 or 16
+'http_chunk_size': 20971520,  # 20MB chunks (from 10MB)
+```
+
+And aria2c args:
+
+```python
+'--max-connection-per-server=8',  # Increase from 4
+'--split=8',  # Increase from 4
+```
+
+⚠️ **Note**: Too many connections may trigger rate limiting on some sites like YouTube.
+
+---
+
+## 🛠️ Troubleshooting on Linux Mint
+
+### Issue: `tkinter` not found
+```bash
+sudo apt install python3-tk
+```
+
+### Issue: `ffmpeg` not found (needed for merging video+audio)
+```bash
+sudo apt install ffmpeg
+```
+
+### Issue: Permission errors when installing packages
+Use a virtual environment or:
+```bash
+pip install --user -r requirements.txt
+```
+
+### Issue: No DISPLAY / GUI won't start
+This happens in SSH or headless environments. Use CLI mode:
+```bash
+python cli.py <URL>
+```
 
 ---
 
@@ -59,157 +152,52 @@ python gui.py
 
 ```
 video-downloader/
-├── gui.py             # ✨ Completely redesigned modern UI (this is the focus)
-├── downloader.py      # Core yt-dlp logic (unchanged)
-├── cli.py             # Classic CLI (still available)
-├── main.py            # Launcher
-└── README.md
+├── gui.py              # Modern glassmorphic UI
+├── downloader.py       # Core yt-dlp logic with speed optimizations
+├── cli.py              # Command-line interface
+├── main.py             # Smart launcher (GUI or CLI)
+├── requirements.txt    # Python dependencies
+└── README.md           # This file
 ```
 
 ---
 
-## 📸 UI Highlights (Wireframe Logic)
+## 🎯 Supported Sites
 
-```
-┌──────────────────────────────────────────────────────────────┐
-│  ▶ VideoFlow                 4K+ • 1000+ sites     ⚙ Settings  📁  │
-├──────────────────────────────────────────────────────────────┤
-│  [🔗] Paste a link from YouTube...                             │
-│  ┌────────────────────────────────────────────────────┐       │
-│  │ https://youtube.com/...                    [Paste] │       │
-│  │                                     [Analyze] [⬇ Paste & Download] │
-│  └────────────────────────────────────────────────────┘       │
-├──────────────────────────────────────────────────────────────┤
-│  ┌──────────────────────────────┬──────────────────────────┐ │
-│  │  [▶]  Thumbnail              │ Title: ...               │ │
-│  │      (glass + play icon)     │ Uploader • 3m 42s        │ │
-│  │                              │                          │ │
-│  │                              │ [🎬 Video+Audio] [🎵 Audio] │ │
-│  │                              │ Quality:  [4K 60fps ... ▼] │ │
-│  └──────────────────────────────┴──────────────────────────┘ │
-├──────────────────────────────────────────────────────────────┤
-│  Download Queue                              [+ Add] [▶ Start Queue] [Clear] │
-│  ┌──────────────────────────────────────────────────────────┐ │
-│  │ [Rick Astley - ...] [4K 60fps]  queued   ↑ ↓ ✕           │ │
-│  │ [Viral Dance...]      [1080p]   queued   ↑ ↓ ✕           │ │
-│  └──────────────────────────────────────────────────────────┘ │
-├──────────────────────────────────────────────────────────────┤
-│  No active download                                            │
-│  ┌──────────────────────────────────────────────────────────┐ │
-│  │ ████████████████░░░░░░░░░░░░  67%   12.4 MB/s • ETA 18s   │ │
-│  │                     142 MB / 211 MB                       │ │
-│  └──────────────────────────────────────────────────────────┘ │
-│  [⬇ Download Now]  [Cancel]                                    │
-└──────────────────────────────────────────────────────────────┘
-```
+Via yt-dlp, this tool supports **1000+ websites** including:
+
+- YouTube (4K, 8K, HDR, 60fps)
+- TikTok
+- Instagram (Reels, Stories, Posts)
+- Twitter / X
+- Vimeo
+- Facebook
+- Twitch clips
+- Dailymotion
+- And many more!
+
+Full list: https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md
 
 ---
 
-## 🛠️ Key Code Components
+## Features
 
-### 1. Modern Glassmorphic Progress Bar (`ModernProgressBar`)
+### Visual Aesthetic
+- **Glassmorphism** design with frosted glass cards
+- **Catppuccin Mocha** inspired dark palette
+- Clean rounded corners and elegant typography
 
-See full implementation in `gui.py`:
-
-```python
-class ModernProgressBar(tk.Canvas):
-    def _draw(self):
-        # Outer glass frame
-        self._draw_rounded_rect(...)
-        # Inner track + progress fill
-        # Gloss highlight layer
-        # Live overlay text: percent + speed + ETA
-```
-
-### 2. Smart Input + Platform Detection
-
-```python
-def _detect_platform(self, url):
-    if "youtube" in url: return "🎬 YouTube", ...
-    ...
-```
-
-### 3. Dynamic Preview Card
-
-Rendered with a canvas-based glass thumbnail + rich metadata.
-
-### 4. Queue with Drag-Reorder (simple)
-
-Uses `QueueItem` widgets + list reordering.
-
-### 5. Toast Notifications
-
-```python
-class Toast(tk.Toplevel):
-    # Auto-positioned, auto-dismiss, colored accent bar
-```
-
-### 6. Slide-in Settings
-
-```python
-def _toggle_settings(self):
-    if not visible:
-        self.settings_panel.pack(side="right", fill="y")
-```
+### Core Functionality
+- Smart URL input with platform detection
+- Dynamic preview card with metadata
+- Quality selection (8K, 4K, 1080p, etc.)
+- Audio/Video mode toggle
+- Download queue management
+- Real-time progress with speed & ETA
+- Toast notifications
 
 ---
 
-## 🎨 Styling Tips (Glassmorphism + Neumorphism)
-
-### CSS / Tkinter equivalents
-
-**Glassmorphism** (applied via colors + layered frames):
-```css
-/* Equivalent for web port */
-.card {
-  background: rgba(49, 50, 68, 0.85);
-  border: 1px solid rgba(69, 71, 90, 0.6);
-  backdrop-filter: blur(20px);
-  border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-}
-```
-
-**Tkinter implementation** (used in this app):
-- Rounded rectangles via `create_rectangle` + `create_arc`
-- Layered `SURFACE` colors with subtle borders (`#45475a`)
-- Gloss overlay using `stipple="gray50"` + white rectangle
-- Hover states via `.bind("<Enter>")` + color swap
-
-**Color Palette** (Catppuccin Mocha):
-- `#181825` — Deep background
-- `#313244` — Glass surface
-- `#89b4fa` — Accent (blue)
-- `#a6e3a1` — Success
-
-**Micro-interactions**:
-- Buttons use `style.map` for `active` / `pressed`
-- `QueueItem` hover changes background
-- Progress bar redraws on every update (smooth)
-
-**Typography**:
-- Primary: `Segoe UI` (or `Helvetica` fallback)
-- Weight hierarchy: 9pt muted, 10–11pt normal, 13pt bold titles
-
----
-
-## Future Enhancements (Easy to Add)
-
-- Real thumbnail download using Pillow + yt-dlp thumbnail extraction
-- Drag & drop support (`tkinterdnd2`)
-- Dark/Light toggle
-- Download history + completed tab
-- Speed graph in progress bar
-- Web version (React + Tailwind + shadcn/ui glass components)
-
----
-
-## Legacy Support
-
-The original `gui.py` behavior is preserved in spirit. You can still run the classic version by reverting or using `cli.py`.
-
----
-
-**Built with ❤️ as a Senior UI/UX + Frontend exercise on top of the existing yt-dlp core.**
+**Built with ❤️ for Linux Mint and other Linux distributions.**
 
 Run `python gui.py` and enjoy the modern experience!
