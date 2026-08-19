@@ -10,7 +10,38 @@ Supports **4K, 8K, HDR, 1080p** + audio-only from **YouTube, TikTok, Instagram, 
 
 ## 🚀 Installation on Linux Mint
 
-### Step 1: Install System Dependencies
+### Option 1: Install from .deb Package (Recommended)
+
+A `.deb` package is included in this repository for easy installation:
+
+```bash
+# Navigate to the directory containing the .deb file
+cd /path/to/video-downloader
+
+# Install the package
+sudo dpkg -i video-downloader_1.0.0_all.deb
+
+# If there are dependency issues, fix them with:
+sudo apt-get install -f -y
+```
+
+This will automatically:
+- Install all system dependencies (python3, ffmpeg, aria2, etc.)
+- Create a virtual environment with Python packages (yt-dlp, requests, pillow)
+- Add a menu entry for the GUI application (find it in Applications > Audio & Video)
+- Install command-line tools (`video-downloader` and `video-downloader-cli`)
+
+**After installation:**
+- **GUI**: Run `video-downloader` from terminal or click the icon in the application menu
+- **CLI**: Run `video-downloader-cli <URL>` from terminal
+
+---
+
+### Option 2: Manual Installation
+
+If you prefer to install manually without the .deb package:
+
+#### Step 1: Install System Dependencies
 
 Open a terminal and run:
 
@@ -22,7 +53,7 @@ sudo apt update
 sudo apt install -y python3 python3-pip python3-tk git ffmpeg aria2
 ```
 
-### Step 2: Clone or Download the Project
+#### Step 2: Clone or Download the Project
 
 If you have the project as a zip file, extract it. Or clone from git:
 
@@ -32,7 +63,7 @@ git clone <repository-url> video-downloader
 cd video-downloader
 ```
 
-### Step 3: Create Virtual Environment (Recommended)
+#### Step 3: Create Virtual Environment (Recommended)
 
 ```bash
 # Create virtual environment
@@ -42,7 +73,7 @@ python3 -m venv venv
 source venv/bin/activate
 ```
 
-### Step 4: Install Python Dependencies
+#### Step 4: Install Python Dependencies
 
 ```bash
 pip install --upgrade pip
@@ -55,19 +86,44 @@ pip install -r requirements.txt
 
 ### Launch the GUI
 
+**If installed via .deb package:**
+```bash
+video-downloader
+```
+Or find "Video Downloader" in your application menu (Applications > Audio & Video).
+
+**If manually installed:**
 ```bash
 # Make sure you're in the project directory and venv is activated
 python main.py
 ```
 
 Or directly:
-
 ```bash
 python gui.py
 ```
 
 ### Use the CLI
 
+**If installed via .deb package:**
+```bash
+# Basic download (best quality)
+video-downloader-cli https://youtube.com/watch?v=VIDEO_ID
+
+# List available formats
+video-downloader-cli -l https://youtube.com/watch?v=VIDEO_ID
+
+# Download specific quality (e.g., 1080p)
+video-downloader-cli -f 1080p https://youtube.com/watch?v=VIDEO_ID
+
+# Download audio only
+video-downloader-cli -a https://youtube.com/watch?v=VIDEO_ID
+
+# Download to specific folder
+video-downloader-cli -o ~/Videos https://youtube.com/watch?v=VIDEO_ID
+```
+
+**If manually installed:**
 ```bash
 # Basic download (best quality)
 python cli.py https://youtube.com/watch?v=VIDEO_ID
