@@ -1,1 +1,9 @@
+# Core dependencies
 yt-dlp>=2024.03.10
+
+# Optional: For faster downloads (recommended)
+# Install aria2c separately: sudo apt install aria2
+
+# GUI dependencies
+pillow
+requests

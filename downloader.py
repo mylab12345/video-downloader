@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import os
 import sys
 import yt_dlp
@@ -6,6 +7,7 @@ class VideoDownloader:
     """
     Core Video Downloader utilizing yt-dlp to support 1000+ websites and direct video URLs.
     Handles format extraction, metadata parsing, and downloading with progress tracking.
+    Optimized for fast downloads with concurrent fragments and smart retry logic.
     """
 
     def fetch_video_info(self, url: str) -> dict:
@@ -17,6 +19,8 @@ class VideoDownloader:
             'no_warnings': True,
             'skip_download': True,
             'extract_flat': False,
+            'socket_timeout': 30,
+            'retries': 3,
         }
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
@@ -93,6 +97,7 @@ class VideoDownloader:
     def download(self, url: str, format_id: str = None, output_path: str = ".", progress_hook=None) -> str:
         """
         Downloads video for a given URL and format into output_path.
+        Optimized for maximum download speed with concurrent fragments.
         """
         os.makedirs(output_path, exist_ok=True)
         out_tmpl = os.path.join(output_path, '%(title)s.%(ext)s')
@@ -105,7 +110,40 @@ class VideoDownloader:
             'quiet': True,
             'no_warnings': True,
             'nocheckcertificate': True,
+            # Speed optimization settings
+            'concurrent_fragment_downloads': 4,  # Download 4 fragments concurrently
+            'fragment_retries': 3,
+            'retries': 3,
+            'socket_timeout': 30,
+            'http_chunk_size': 10485760,  # 10MB chunks for better throughput
+            # Use aria2c if available for even faster downloads
+            'external_downloader': 'aria2c',
+            'external_downloader_args': {
+                'aria2c': [
+                    '--max-connection-per-server=4',
+                    '--min-split-size=1M',
+                    '--split=4',
+                    '--async-dns=false',
+                    '--disable-ipv6=true',
+                ]
+            },
+            # Post-processing options
+            'merge_output_format': 'mp4',  # Auto-merge to mp4
+            'postprocessor_args': ['-movflags', '+faststart'],  # Optimize for streaming
         }
+
+        # Fallback to default downloader if aria2c is not available
+        try:
+            import subprocess
+            result = subprocess.run(['aria2c', '--version'], capture_output=True, timeout=2)
+            if result.returncode != 0:
+                # aria2c not available, remove external downloader settings
+                del ydl_opts['external_downloader']
+                del ydl_opts['external_downloader_args']
+        except (subprocess.SubprocessError, FileNotFoundError):
+            # aria2c not installed, use built-in downloader
+            del ydl_opts['external_downloader']
+            del ydl_opts['external_downloader_args']
 
         if progress_hook:
             ydl_opts['progress_hooks'] = [progress_hook]
