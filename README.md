@@ -82,6 +82,27 @@ pip install -r requirements.txt
 
 ---
 
+## 🖥️ Install as a desktop app
+
+Adds a **VideoFlow** icon to your application menu (Sound & Video) and a
+`videoflow` command:
+
+```bash
+bash setup_venv.sh
+bash packaging/install-desktop.sh
+```
+
+Then launch it like any other app — from the menu, or:
+
+```bash
+videoflow
+```
+
+On a machine with a display + `python3-tk` this opens the native window.
+Otherwise it opens the same desktop-styled app UI in your browser / live preview.
+
+---
+
 ## 📋 Quick Start
 
 ### Launch the GUI
