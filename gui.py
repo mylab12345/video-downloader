@@ -1135,6 +1135,22 @@ class ModernVideoDownloaderGUI:
 
 def main():
     root = tk.Tk()
+
+    # Set the application window icon (title bar / taskbar).
+    # Resolve the icon next to this module so it works both from the repo
+    # and from the installed location (/usr/share/video-downloader).
+    _icon_candidates = [
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "icon.png"),
+        "/usr/share/pixmaps/video-downloader.xpm",
+    ]
+    for _icon in _icon_candidates:
+        if os.path.exists(_icon):
+            try:
+                root.iconphoto(True, tk.PhotoImage(file=_icon))
+                break
+            except Exception:
+                pass
+
     app = ModernVideoDownloaderGUI(root)
     
     # Optional: center window
