@@ -1,4 +1,8 @@
 ```
-# Debian build artifacts
-debian_build/
+# Compiled Python files
+*.pyc
+__pycache__/
+
+# Video files (build/test artifacts)
+*.mp4
 ```

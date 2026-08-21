@@ -2,6 +2,8 @@
 import os
 import sys
 import yt_dlp
+import subprocess
+import tempfile
 
 class VideoDownloader:
     """
@@ -10,21 +12,85 @@ class VideoDownloader:
     Optimized for fast downloads with concurrent fragments and smart retry logic.
     """
 
-    def fetch_video_info(self, url: str) -> dict:
+    def __init__(self, cookie_file=None, use_cookies_from_browser=False, browser_name='chrome'):
         """
-        Fetches metadata and available formats for a given video URL without downloading.
+        Initialize the downloader with optional authentication.
+        
+        Args:
+            cookie_file: Path to Netscape cookie file for authentication
+            use_cookies_from_browser: Whether to extract cookies from browser
+            browser_name: Browser name to extract cookies from (chrome, firefox, edge, etc.)
         """
-        ydl_opts = {
+        self.cookie_file = cookie_file
+        self.use_cookies_from_browser = use_cookies_from_browser
+        self.browser_name = browser_name
+        
+    def _get_base_opts(self):
+        """Get base yt-dlp options with authentication support"""
+        opts = {
             'quiet': True,
             'no_warnings': True,
             'skip_download': True,
             'extract_flat': False,
             'socket_timeout': 30,
-            'retries': 3,
+            'retries': 5,
+            'fragment_retries': 5,
+            # Try to bypass some restrictions
+            'extractor_args': {
+                'youtube': {
+                    'player_client': ['ios', 'web'],  # Use multiple player clients
+                    'player_skip': ['webpage'],  # Skip webpage extraction when possible
+                }
+            },
         }
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url, download=False)
-            return info
+        
+        # Add cookie support if available
+        if self.cookie_file and os.path.exists(self.cookie_file):
+            opts['cookiefile'] = self.cookie_file
+        elif self.use_cookies_from_browser:
+            try:
+                # Try to auto-detect browser cookies
+                opts['cookiesfrombrowser'] = (self.browser_name,)
+            except:
+                pass
+                
+        return opts
+
+    def fetch_video_info(self, url: str) -> dict:
+        """
+        Fetches metadata and available formats for a given video URL without downloading.
+        Enhanced with better error handling and retry logic.
+        """
+        ydl_opts = self._get_base_opts()
+        
+        # Add specific options for info extraction
+        ydl_opts.update({
+            'skip_download': True,
+            'playlistend': 1,  # Only get first video if playlist
+        })
+        
+        try:
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(url, download=False)
+                return info
+        except yt_dlp.utils.DownloadError as e:
+            error_msg = str(e)
+            
+            # Check for common errors and provide helpful messages
+            if 'Sign in to confirm' in error_msg or 'bot' in error_msg.lower():
+                raise Exception(
+                    "YouTube requires authentication. Please export cookies using:\n"
+                    "  1. Install 'cookies.txt' browser extension\n"
+                    "  2. Export cookies from youtube.com\n"
+                    "  3. Save as 'cookies.txt' in the same directory\n"
+                    "Or use: VideoDownloader(cookie_file='cookies.txt')"
+                )
+            elif 'unavailable' in error_msg.lower() or 'private' in error_msg.lower():
+                raise Exception(f"Video is unavailable, private, or has been removed: {url}")
+            elif '403' in error_msg or 'Forbidden' in error_msg:
+                raise Exception(f"Access forbidden. The URL may require authentication or has restrictions: {url}")
+            else:
+                raise Exception(f"Failed to fetch video info: {error_msg}")
 
     def parse_formats(self, info: dict) -> list:
         """
@@ -98,13 +164,15 @@ class VideoDownloader:
         """
         Downloads video for a given URL and format into output_path.
         Optimized for maximum download speed with concurrent fragments.
+        Supports all video formats and high resolutions (4K, 8K, HDR).
         """
         os.makedirs(output_path, exist_ok=True)
         out_tmpl = os.path.join(output_path, '%(title)s.%(ext)s')
 
         target_format = format_id if format_id else 'bestvideo+bestaudio/best'
 
-        ydl_opts = {
+        ydl_opts = self._get_base_opts()
+        ydl_opts.update({
             'format': target_format,
             'outtmpl': out_tmpl,
             'quiet': True,
@@ -112,43 +180,59 @@ class VideoDownloader:
             'nocheckcertificate': True,
             # Speed optimization settings
             'concurrent_fragment_downloads': 4,  # Download 4 fragments concurrently
-            'fragment_retries': 3,
-            'retries': 3,
+            'fragment_retries': 5,
+            'retries': 5,
             'socket_timeout': 30,
             'http_chunk_size': 10485760,  # 10MB chunks for better throughput
-            # Use aria2c if available for even faster downloads
-            'external_downloader': 'aria2c',
-            'external_downloader_args': {
-                'aria2c': [
-                    '--max-connection-per-server=4',
-                    '--min-split-size=1M',
-                    '--split=4',
-                    '--async-dns=false',
-                    '--disable-ipv6=true',
-                ]
-            },
             # Post-processing options
             'merge_output_format': 'mp4',  # Auto-merge to mp4
             'postprocessor_args': ['-movflags', '+faststart'],  # Optimize for streaming
-        }
+        })
 
-        # Fallback to default downloader if aria2c is not available
+        # Try to use aria2c for faster downloads if available
+        aria2c_available = False
         try:
-            import subprocess
             result = subprocess.run(['aria2c', '--version'], capture_output=True, timeout=2)
-            if result.returncode != 0:
-                # aria2c not available, remove external downloader settings
-                del ydl_opts['external_downloader']
-                del ydl_opts['external_downloader_args']
+            if result.returncode == 0:
+                aria2c_available = True
+                ydl_opts['external_downloader'] = 'aria2c'
+                ydl_opts['external_downloader_args'] = {
+                    'aria2c': [
+                        '--max-connection-per-server=4',
+                        '--min-split-size=1M',
+                        '--split=4',
+                        '--async-dns=false',
+                        '--disable-ipv6=true',
+                    ]
+                }
         except (subprocess.SubprocessError, FileNotFoundError):
-            # aria2c not installed, use built-in downloader
-            del ydl_opts['external_downloader']
-            del ydl_opts['external_downloader_args']
+            pass
 
         if progress_hook:
             ydl_opts['progress_hooks'] = [progress_hook]
 
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url, download=True)
-            filename = ydl.prepare_filename(info)
-            return filename
+        try:
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(url, download=True)
+                if info:
+                    filename = ydl.prepare_filename(info)
+                    # Handle merged files (when video+audio are combined)
+                    if not os.path.exists(filename):
+                        # Try common extensions
+                        for ext in ['.mp4', '.mkv', '.webm', '.m4a', '.mp3']:
+                            alt_filename = os.path.splitext(filename)[0] + ext
+                            if os.path.exists(alt_filename):
+                                return alt_filename
+                    return filename
+                return None
+        except yt_dlp.utils.DownloadError as e:
+            error_msg = str(e)
+            if 'Sign in to confirm' in error_msg or 'bot' in error_msg.lower():
+                raise Exception(
+                    "YouTube requires authentication. Please use cookies for authentication.\n"
+                    "See: https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp"
+                )
+            elif 'unavailable' in error_msg.lower():
+                raise Exception(f"Video is unavailable or has been removed: {url}")
+            else:
+                raise Exception(f"Download failed: {error_msg}")
