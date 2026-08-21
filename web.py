@@ -49,6 +49,7 @@ from flask import (
     request,
     send_from_directory,
 )
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 from downloader import VideoDownloader, FFMPEG_PATH
 
@@ -58,6 +59,11 @@ from downloader import VideoDownloader, FFMPEG_PATH
 # ---------------------------------------------------------------------------
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # request bodies only
+# Preview is served on https://{port}-{sandbox}.e2b.app — never reject Host.
+app.config["TRUSTED_HOSTS"] = None
+app.config["PREFERRED_URL_SCHEME"] = "https"
+# Behind the Arena / e2b reverse proxy (TLS + Host rewrite).
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
 # Where finished files are stored. Keep it outside the source tree.
 DOWNLOAD_ROOT = Path(os.environ.get("VIDEOFLOW_DOWNLOAD_DIR", tempfile.gettempdir())) / "videoflow"
@@ -151,6 +157,9 @@ def _cors(resp):
     resp.headers["Access-Control-Allow-Origin"] = "*"
     resp.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
     resp.headers["Access-Control-Allow-Headers"] = "Content-Type"
+    # Live preview is shown inside an iframe on the Arena UI.
+    resp.headers.pop("X-Frame-Options", None)
+    resp.headers["Content-Security-Policy"] = "frame-ancestors *"
     return resp
 
 
@@ -489,8 +498,15 @@ def index():
     return render_template_string(INDEX_HTML)
 
 
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", "8000"))
+def serve(host: str = "0.0.0.0", port: int | None = None) -> None:
+    """Run the web GUI. Bound on 0.0.0.0 so the preview proxy can reach us."""
+    if port is None:
+        port = int(os.environ.get("PORT", "8000"))
     # Threaded so multiple downloads / range requests can be served
-    # concurrently.  Bind on 0.0.0.0 so the e2b preview proxy can reach us.
-    app.run(host="0.0.0.0", port=port, threaded=True, debug=False)
+    # concurrently. use_reloader=False so we don't spawn a second process
+    # that races the preview probe.
+    app.run(host=host, port=port, threaded=True, debug=False, use_reloader=False)
+
+
+if __name__ == "__main__":
+    serve()
