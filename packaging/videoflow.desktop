@@ -1,0 +1,14 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=VideoFlow
+GenericName=Video Downloader
+Comment=Download videos from YouTube, TikTok, Instagram and 1000+ sites
+Exec=PLACEHOLDER_EXEC
+Icon=PLACEHOLDER_ICON
+Terminal=false
+Categories=AudioVideo;Video;Network;
+Keywords=youtube;download;video;yt-dlp;4k;8k;
+StartupNotify=true
+StartupWMClass=VideoFlow
+MimeType=x-scheme-handler/http;x-scheme-handler/https;

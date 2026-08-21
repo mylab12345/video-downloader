@@ -1,0 +1,518 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#181825">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>VideoFlow</title>
+<link rel="icon" href="/icon.png">
+<link rel="apple-touch-icon" href="/icon.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<style>
+  :root {
+    --bg: #0b0b14;
+    --title: #11111b;
+    --panel: #181825;
+    --surface: #1e1e2e;
+    --hover: #313244;
+    --border: #313244;
+    --text: #cdd6f4;
+    --muted: #a6adc8;
+    --accent: #89b4fa;
+    --accent2: #b4befe;
+    --ok: #a6e3a1;
+    --err: #f38ba8;
+    --warn: #f9e2af;
+    --peach: #fab387;
+    --sidebar: 220px;
+    --titleh: 42px;
+    --statush: 28px;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; overflow: hidden; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font: 14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", "Ubuntu", Roboto, sans-serif;
+    user-select: none;
+  }
+  button, input, select { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  input, textarea { user-select: text; }
+
+  /* App chrome */
+  .app {
+    display: grid;
+    grid-template-rows: var(--titleh) 1fr var(--statush);
+    height: 100%;
+    background:
+      radial-gradient(900px 500px at 0% 0%, #1e1e3a 0, transparent 55%),
+      var(--bg);
+  }
+  .titlebar {
+    display: flex; align-items: center; gap: 10px;
+    padding: 0 12px;
+    background: var(--title);
+    border-bottom: 1px solid var(--border);
+    -webkit-app-region: drag;
+  }
+  .traffic { display: flex; gap: 7px; -webkit-app-region: no-drag; }
+  .traffic i {
+    width: 12px; height: 12px; border-radius: 50%; display: block;
+  }
+  .traffic .c { background: #f38ba8; }
+  .traffic .m { background: #f9e2af; }
+  .traffic .e { background: #a6e3a1; }
+  .brand { display: flex; align-items: center; gap: 8px; font-weight: 650; letter-spacing: -.02em; }
+  .brand img { width: 22px; height: 22px; border-radius: 6px; }
+  .brand span { color: var(--muted); font-weight: 500; font-size: 12px; margin-left: 4px; }
+  .title-spacer { flex: 1; }
+  .title-btn {
+    -webkit-app-region: no-drag;
+    background: transparent; border: 0; color: var(--muted);
+    padding: 4px 10px; border-radius: 6px;
+  }
+  .title-btn:hover { background: var(--hover); color: var(--text); }
+
+  .shell {
+    display: grid;
+    grid-template-columns: var(--sidebar) 1fr;
+    min-height: 0;
+  }
+  .sidebar {
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    padding: 14px 10px;
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .nav {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 12px; border-radius: 10px;
+    color: var(--muted); background: transparent; border: 0; width: 100%; text-align: left;
+  }
+  .nav:hover { background: var(--hover); color: var(--text); }
+  .nav.active { background: #313244; color: var(--accent); font-weight: 600; }
+  .nav .ic { width: 18px; text-align: center; }
+  .side-foot { margin-top: auto; padding: 10px 8px; color: var(--muted); font-size: 11px; }
+
+  .main { min-width: 0; min-height: 0; overflow: auto; padding: 22px 26px 32px; }
+  .page { display: none; max-width: 980px; }
+  .page.active { display: block; }
+
+  h1 { font-size: 22px; margin: 0 0 4px; letter-spacing: -.02em; }
+  .sub { color: var(--muted); margin: 0 0 20px; }
+
+  .card {
+    background: rgba(30,30,46,.72);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 18px;
+    margin-bottom: 14px;
+    backdrop-filter: blur(12px);
+  }
+  .row { display: flex; gap: 8px; align-items: center; }
+  input[type=text], select {
+    flex: 1; background: var(--panel); border: 1px solid var(--border);
+    border-radius: 10px; padding: 11px 13px; outline: none;
+  }
+  input[type=text]:focus, select:focus { border-color: var(--accent); }
+  .btn {
+    background: var(--accent); color: #11111b; border: 0;
+    border-radius: 10px; padding: 11px 16px; font-weight: 650;
+  }
+  .btn:hover { background: var(--accent2); }
+  .btn.ghost {
+    background: var(--surface); color: var(--text); border: 1px solid var(--border);
+  }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+  .hint { color: var(--muted); font-size: 12px; margin: 8px 0 0; }
+
+  .meta { display: flex; gap: 16px; }
+  .thumb {
+    width: 196px; height: 110px; border-radius: 10px;
+    background: var(--panel); object-fit: cover; flex-shrink: 0;
+    border: 1px solid var(--border);
+  }
+  .meta-info h3 { margin: 0 0 4px; font-size: 16px; }
+  .meta-info p { margin: 0; color: var(--muted); font-size: 13px; }
+
+  .seg { display: inline-flex; background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 3px; }
+  .seg button {
+    background: transparent; border: 0; color: var(--muted);
+    padding: 6px 12px; border-radius: 8px;
+  }
+  .seg button.on { background: var(--accent); color: #11111b; font-weight: 650; }
+
+  .progress { height: 12px; background: var(--panel); border-radius: 8px; overflow: hidden; border: 1px solid var(--border); margin: 12px 0 8px; }
+  .fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent), var(--accent2)); transition: width .25s; }
+
+  .job {
+    display: grid; grid-template-columns: 1fr auto; gap: 8px 12px;
+    padding: 12px; border-radius: 12px; background: var(--panel);
+    border: 1px solid var(--border); margin-bottom: 8px;
+  }
+  .job .name { font-weight: 600; }
+  .job .st { font-size: 12px; color: var(--muted); }
+  .job .st.ok { color: var(--ok); }
+  .job .st.err { color: var(--err); }
+  .job .st.run { color: var(--accent); }
+  .empty { color: var(--muted); text-align: center; padding: 36px 12px; }
+
+  .toast {
+    position: fixed; right: 18px; bottom: 42px;
+    background: var(--surface); border: 1px solid var(--border);
+    padding: 12px 16px; border-radius: 10px; max-width: 360px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.45); display: none; z-index: 20;
+  }
+  .toast.show { display: block; }
+  .toast.err { border-color: var(--err); color: var(--err); }
+  .toast.ok { border-color: var(--ok); color: var(--ok); }
+
+  .statusbar {
+    display: flex; align-items: center; gap: 14px;
+    padding: 0 14px; background: var(--title);
+    border-top: 1px solid var(--border);
+    color: var(--muted); font-size: 12px;
+  }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); }
+
+  .setting { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .setting:last-child { border-bottom: 0; }
+  .setting .k { font-weight: 600; }
+  .setting .v { color: var(--accent); font-size: 13px; }
+
+  code { background: var(--panel); padding: 1px 6px; border-radius: 4px; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="titlebar">
+    <div class="traffic"><i class="c"></i><i class="m"></i><i class="e"></i></div>
+    <div class="brand">
+      <img src="/icon.png" alt="">
+      VideoFlow
+      <span>Desktop</span>
+    </div>
+    <div class="title-spacer"></div>
+    <button class="title-btn" id="installBtn" title="Add to application menu">Install on this desktop</button>
+  </div>
+
+  <div class="shell">
+    <aside class="sidebar">
+      <button class="nav active" data-page="download"><span class="ic">⬇</span> New download</button>
+      <button class="nav" data-page="queue"><span class="ic">☰</span> Queue</button>
+      <button class="nav" data-page="library"><span class="ic">🎞</span> Library</button>
+      <button class="nav" data-page="settings"><span class="ic">⚙</span> Settings</button>
+      <div class="side-foot">4K · 8K · 1000+ sites<br>yt-dlp + ffmpeg</div>
+    </aside>
+
+    <main class="main">
+      <section class="page active" id="page-download">
+        <h1>New download</h1>
+        <p class="sub">Paste a link from YouTube, TikTok, Instagram, Vimeo, X, or a direct video URL.</p>
+
+        <div class="card">
+          <div class="row">
+            <input id="url" type="text" placeholder="https://youtube.com/watch?v=…  or  https://cdn.example/clip.mp4" autocomplete="off">
+            <button class="btn ghost" id="paste">Paste</button>
+            <button class="btn" id="analyze">Analyze</button>
+          </div>
+          <p class="hint" id="platform">Supports MP4, MKV, MOV, AVI, WMV, WebM · up to 8K</p>
+        </div>
+
+        <div class="card" id="preview" style="display:none">
+          <div class="meta">
+            <img id="thumb" class="thumb" alt="">
+            <div class="meta-info" style="flex:1">
+              <h3 id="title">—</h3>
+              <p id="submeta">—</p>
+              <div style="margin-top:12px" class="row">
+                <div class="seg">
+                  <button id="modeVideo" class="on">Video + audio</button>
+                  <button id="modeAudio">Audio only</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div style="margin-top:14px">
+            <label class="hint" for="fmt">Quality</label>
+            <select id="fmt"></select>
+          </div>
+          <div class="row" style="margin-top:14px">
+            <button class="btn" id="download">Download</button>
+            <button class="btn ghost" id="addQueue">Add to queue</button>
+            <button class="btn ghost" id="reset">Clear</button>
+          </div>
+        </div>
+
+        <div class="card" id="progress" style="display:none">
+          <div class="row" style="justify-content:space-between">
+            <strong id="pstatus">Starting…</strong>
+            <span class="hint" id="ppct">0%</span>
+          </div>
+          <div class="progress"><div class="fill" id="pfill"></div></div>
+          <div class="row" style="justify-content:space-between;color:var(--muted);font-size:12px">
+            <span id="psize">0 / 0</span>
+            <span id="pspeed">0 B/s</span>
+            <span id="peta">ETA —</span>
+          </div>
+          <div class="row" style="margin-top:12px">
+            <a id="saveLink" style="display:none"><button class="btn">Save file</button></a>
+          </div>
+        </div>
+      </section>
+
+      <section class="page" id="page-queue">
+        <h1>Queue</h1>
+        <p class="sub">Active and recent downloads in this session.</p>
+        <div id="queueList"></div>
+      </section>
+
+      <section class="page" id="page-library">
+        <h1>Library</h1>
+        <p class="sub">Files already fetched to this machine.</p>
+        <div id="libList"></div>
+      </section>
+
+      <section class="page" id="page-settings">
+        <h1>Settings</h1>
+        <p class="sub">VideoFlow desktop application.</p>
+        <div class="card">
+          <div class="setting"><div class="k">Save location</div><div class="v" id="setPath">—</div></div>
+          <div class="setting"><div class="k">ffmpeg</div><div class="v" id="setFf">—</div></div>
+          <div class="setting"><div class="k">Default quality</div><div class="v">Best (auto merge)</div></div>
+          <div class="setting"><div class="k">Theme</div><div class="v">Dark glass</div></div>
+        </div>
+        <div class="card">
+          <p style="margin:0 0 12px">Add VideoFlow to your application menu so it launches like any other desktop app.</p>
+          <button class="btn" id="installBtn2">Install desktop shortcut</button>
+          <p class="hint">Creates <code>~/.local/share/applications/videoflow.desktop</code> and a <code>videoflow</code> command.</p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="statusbar">
+    <span class="dot"></span>
+    <span id="status">Ready</span>
+    <span style="margin-left:auto" id="statusJobs">0 jobs</span>
+  </div>
+</div>
+<div id="toast" class="toast"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const fmt = n => {
+  if (!n) return "0 B";
+  const u = ["B","KB","MB","GB","TB"]; let i = 0;
+  while (n >= 1024 && i < u.length-1) { n /= 1024; i++; }
+  return n.toFixed(2) + " " + u[i];
+};
+const fmtTime = s => {
+  if (!s && s !== 0) return "—";
+  s = Math.round(s);
+  const m = Math.floor(s/60), r = s%60;
+  return m ? `${m}m ${r}s` : `${r}s`;
+};
+function toast(msg, kind="") {
+  const t = $("#toast");
+  t.className = "toast show " + kind;
+  t.textContent = msg;
+  clearTimeout(window._tt); window._tt = setTimeout(()=>t.classList.remove("show"), 4200);
+}
+function setStatus(s) { $("#status").textContent = s; }
+
+$$(".nav").forEach(b => b.onclick = () => {
+  $$(".nav").forEach(x => x.classList.remove("active"));
+  b.classList.add("active");
+  $$(".page").forEach(p => p.classList.remove("active"));
+  $("#page-" + b.dataset.page).classList.add("active");
+  if (b.dataset.page === "queue") refreshJobs();
+  if (b.dataset.page === "library") refreshLibrary();
+});
+
+let currentInfo = null;
+let allFormats = [];
+let pollTimer = null;
+let audioOnly = false;
+
+function detectPlatform(url) {
+  const u = (url||"").toLowerCase();
+  if (u.includes("youtube") || u.includes("youtu.be")) return "YouTube";
+  if (u.includes("tiktok")) return "TikTok";
+  if (u.includes("instagram")) return "Instagram";
+  if (u.includes("twitter") || u.includes("x.com")) return "X / Twitter";
+  if (u.includes("vimeo")) return "Vimeo";
+  if (u.startsWith("http")) return "Direct / web";
+  return "";
+}
+$("#url").addEventListener("input", () => {
+  const p = detectPlatform($("#url").value);
+  $("#platform").textContent = p ? ("Detected: " + p) : "Supports MP4, MKV, MOV, AVI, WMV, WebM · up to 8K";
+});
+
+$("#paste").onclick = async () => {
+  try {
+    const t = await navigator.clipboard.readText();
+    if (t) { $("#url").value = t.trim(); $("#url").dispatchEvent(new Event("input")); }
+  } catch { toast("Clipboard not available — paste with Ctrl+V", "err"); }
+};
+
+$("#analyze").onclick = async () => {
+  const url = $("#url").value.trim();
+  if (!url) return toast("Enter a URL first", "err");
+  $("#analyze").disabled = true; $("#analyze").textContent = "Analyzing…";
+  setStatus("Fetching video metadata…");
+  try {
+    const r = await fetch("api/info", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({url})});
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.error || "failed");
+    currentInfo = j;
+    allFormats = j.formats || [];
+    $("#preview").style.display = "block";
+    $("#title").textContent = j.title || "(untitled)";
+    $("#submeta").textContent = [j.uploader, j.duration ? fmtTime(j.duration) : null, (j.formats||[]).length + " formats"].filter(Boolean).join(" · ");
+    $("#thumb").src = j.thumbnail || "/icon.png";
+    fillFormats();
+    toast("Ready to download", "ok");
+    setStatus("Ready · " + (j.title || "video loaded"));
+  } catch (e) { toast(e.message, "err"); setStatus("Analyze failed"); }
+  finally { $("#analyze").disabled = false; $("#analyze").textContent = "Analyze"; }
+};
+
+function fillFormats() {
+  const sel = $("#fmt"); sel.innerHTML = "";
+  let list = allFormats;
+  if (audioOnly) {
+    const a = allFormats.filter(f => /audio/i.test(f.label||"") || /bestaudio/i.test(f.format_id||""));
+    if (a.length) list = a;
+  }
+  list.forEach(f => {
+    const o = document.createElement("option");
+    o.value = f.format_id; o.textContent = f.label;
+    sel.appendChild(o);
+  });
+}
+$("#modeVideo").onclick = () => { audioOnly = false; $("#modeVideo").classList.add("on"); $("#modeAudio").classList.remove("on"); fillFormats(); };
+$("#modeAudio").onclick = () => { audioOnly = true; $("#modeAudio").classList.add("on"); $("#modeVideo").classList.remove("on"); fillFormats(); };
+
+$("#reset").onclick = () => {
+  currentInfo = null;
+  $("#preview").style.display = "none";
+  $("#progress").style.display = "none";
+  $("#url").value = "";
+  clearInterval(pollTimer);
+};
+
+async function startDownload() {
+  if (!currentInfo) return;
+  const url = $("#url").value.trim();
+  const format_id = $("#fmt").value;
+  $("#download").disabled = true;
+  try {
+    const r = await fetch("api/download", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({url, format_id, title: currentInfo.title})
+    });
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.error || "failed");
+    startPolling(j.job_id);
+    refreshJobs();
+  } catch (e) { toast(e.message, "err"); $("#download").disabled = false; }
+}
+$("#download").onclick = startDownload;
+$("#addQueue").onclick = startDownload;
+
+function startPolling(jid) {
+  $("#progress").style.display = "block";
+  $("#pstatus").textContent = "Queued…";
+  $("#saveLink").style.display = "none";
+  clearInterval(pollTimer);
+  pollTimer = setInterval(async () => {
+    try {
+      const r = await fetch("api/progress/" + jid);
+      const j = await r.json();
+      $("#ppct").textContent = (j.percent || 0).toFixed(1) + "%";
+      $("#pfill").style.width = (j.percent || 0) + "%";
+      $("#psize").textContent = fmt(j.downloaded) + " / " + fmt(j.total);
+      $("#pspeed").textContent = fmt(j.speed) + "/s";
+      $("#peta").textContent = "ETA " + fmtTime(j.eta);
+      const map = {queued:"Queued…", downloading:"Downloading…", processing:"Merging streams…", finished:"Finished", error:"Failed"};
+      $("#pstatus").textContent = map[j.status] || j.status;
+      setStatus(map[j.status] || j.status);
+      if (j.status === "finished") {
+        clearInterval(pollTimer);
+        const a = $("#saveLink");
+        a.href = "api/file/" + jid;
+        a.setAttribute("download", j.filename || "video");
+        a.style.display = "inline-block";
+        $("#download").disabled = false;
+        toast("Download ready: " + (j.filename || ""), "ok");
+        refreshJobs(); refreshLibrary();
+      } else if (j.status === "error") {
+        clearInterval(pollTimer);
+        toast(j.error || "Download failed", "err");
+        $("#download").disabled = false;
+      }
+    } catch (e) {}
+  }, 700);
+}
+
+async function refreshJobs() {
+  const r = await fetch("api/jobs");
+  const jobs = await r.json();
+  $("#statusJobs").textContent = jobs.length + " job" + (jobs.length===1?"":"s");
+  const box = $("#queueList");
+  if (!jobs.length) { box.innerHTML = '<div class="empty">Queue is empty. Analyze a video and hit Download.</div>'; return; }
+  box.innerHTML = jobs.map(j => {
+    const st = j.status === "finished" ? "ok" : j.status === "error" ? "err" : "run";
+    const save = j.status === "finished" ? `<a href="api/file/${j.id}" download><button class="btn ghost">Save</button></a>` : "";
+    return `<div class="job">
+      <div><div class="name">${(j.title||j.url||j.id)}</div>
+      <div class="st ${st}">${j.status} · ${(j.percent||0).toFixed(0)}% · ${fmt(j.downloaded)} / ${fmt(j.total)}</div></div>
+      <div>${save}</div></div>`;
+  }).join("");
+}
+
+async function refreshLibrary() {
+  const r = await fetch("api/library");
+  const items = await r.json();
+  const box = $("#libList");
+  if (!items.length) { box.innerHTML = '<div class="empty">No files yet.</div>'; return; }
+  box.innerHTML = items.map(it => `<div class="job">
+    <div><div class="name">${it.name}</div>
+    <div class="st">${fmt(it.size)}</div></div>
+    <div>${it.job_id ? `<a href="api/file/${it.job_id}" download><button class="btn ghost">Save</button></a>` : ""}</div>
+  </div>`).join("");
+}
+
+async function loadHealth() {
+  try {
+    const j = await (await fetch("api/health")).json();
+    $("#setPath").textContent = j.download_root || "—";
+    $("#setFf").textContent = j.ffmpeg ? "available" : "missing";
+    $("#statusJobs").textContent = (j.jobs||0) + " jobs";
+  } catch {}
+}
+
+async function installDesktop() {
+  setStatus("Installing desktop shortcut…");
+  try {
+    const r = await fetch("api/install-desktop", {method:"POST"});
+    const j = await r.json();
+    if (!j.ok) throw new Error(j.log || "install failed");
+    toast("Installed — look for VideoFlow in your app menu", "ok");
+    setStatus("Desktop shortcut installed");
+  } catch (e) { toast(e.message, "err"); }
+}
+$("#installBtn").onclick = installDesktop;
+$("#installBtn2").onclick = installDesktop;
+
+loadHealth();
+refreshJobs();
+setInterval(() => { refreshJobs(); }, 4000);
+</script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "name": "VideoFlow",
+  "short_name": "VideoFlow",
+  "description": "Desktop video downloader for YouTube, TikTok, Instagram and 1000+ sites",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b0b14",
+  "theme_color": "#181825",
+  "icons": [
+    {
+      "src": "/icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
