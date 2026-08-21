@@ -1,8 +1,15 @@
 #!/bin/bash
 set -e
-echo "Setting up Virtual Environment using system Python 3.12 with Tkinter..."
-rm -rf venv
-/usr/bin/python3.12 -m venv --system-site-packages venv
+cd "$(dirname "$0")"
+echo "Setting up virtual environment..."
+python3 -m venv venv
+./venv/bin/pip install --upgrade pip
 ./venv/bin/pip install -r requirements.txt
-./venv/bin/python -c "import tkinter; print('🎉 Tkinter is working perfectly in venv!')"
-echo "Setup complete! You can now run: ./venv/bin/python main.py"
+./venv/bin/python -c "import flask, yt_dlp; print('Dependencies OK')"
+if ./venv/bin/python -c "import tkinter" 2>/dev/null; then
+  echo "Tkinter is available — desktop GUI can be used when a display is present."
+else
+  echo "Tkinter not available — use the web GUI: ./venv/bin/python main.py --web"
+fi
+echo "Setup complete. Start the GUI with:"
+echo "    ./venv/bin/python main.py"

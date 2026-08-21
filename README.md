@@ -86,6 +86,26 @@ pip install -r requirements.txt
 
 ### Launch the GUI
 
+`python main.py` (no arguments) always starts a GUI:
+
+- **Desktop (tkinter)** when a display + python3-tk are available.
+- **Web GUI** otherwise (headless / SSH / this sandbox). Open the printed URL
+  or the live preview in your browser.
+
+```bash
+# Auto: desktop if possible, else web GUI
+python main.py
+
+# Force the browser UI (binds 0.0.0.0:8000, or $PORT)
+python main.py --web
+
+# Force the desktop UI
+python main.py --gui
+
+# CLI
+python main.py --cli <URL>
+```
+
 **If installed via .deb package:**
 ```bash
 video-downloader
@@ -94,13 +114,16 @@ Or find "Video Downloader" in your application menu (Applications > Audio & Vide
 
 **If manually installed:**
 ```bash
-# Make sure you're in the project directory and venv is activated
-python main.py
+# Create the venv once
+bash setup_venv.sh
+
+# Start the GUI (web UI on machines without a display)
+./venv/bin/python main.py
 ```
 
-Or directly:
+Or run the web app directly:
 ```bash
-python gui.py
+./venv/bin/python web.py
 ```
 
 ### Use the CLI
@@ -196,9 +219,19 @@ Use a virtual environment or:
 pip install --user -r requirements.txt
 ```
 
-### Issue: No DISPLAY / GUI won't start
-This happens in SSH or headless environments. Use CLI mode:
+### Issue: No DISPLAY / desktop GUI won't start
+Headless, SSH, and sandbox environments have no X11 display and often no
+`python3-tk`. The launcher now starts the **web GUI** automatically:
+
 ```bash
+python main.py          # auto-falls back to web GUI
+python main.py --web    # force web GUI
+```
+
+Then open `http://127.0.0.1:8000` (or the live preview URL). CLI still works:
+
+```bash
+python main.py --cli <URL>
 python cli.py <URL>
 ```
 
