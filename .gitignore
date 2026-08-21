@@ -1,8 +1,17 @@
-```
 # Compiled Python files
 *.pyc
 __pycache__/
 
 # Video files (build/test artifacts)
 *.mp4
-```
+test_downloads/
+
+# Environments
+venv/
+.venv/
+env/
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/

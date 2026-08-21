@@ -9,8 +9,8 @@ import sys
 import time
 import threading
 
-# Add workspace to path
-sys.path.insert(0, '/workspace')
+# Add repo root to path
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from downloader import VideoDownloader
 
 def format_bytes(size):
@@ -140,7 +140,7 @@ def main():
     print("="*70)
     
     # Create test directory
-    test_dir = "/workspace/test_downloads"
+    test_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_downloads")
     os.makedirs(test_dir, exist_ok=True)
     
     # Test URLs - using Blender Open Movie Project videos that are publicly accessible

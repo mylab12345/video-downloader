@@ -1,9 +1,18 @@
 # Core dependencies
 yt-dlp>=2024.03.10
 
+# Web frontend
+flask>=3.0
+
+# Networking / thumbnails
+requests
+pillow
+
+# Optional but included: static ffmpeg for sandboxes without a system ffmpeg.
+# yt-dlp needs ffmpeg to merge separate video+audio streams (required for
+# every 1080p / 4K / 8K download on YouTube etc). This wheel ships a
+# static ffmpeg binary the downloader auto-discovers.
+imageio-ffmpeg>=0.5
+
 # Optional: For faster downloads (recommended)
 # Install aria2c separately: sudo apt install aria2
-
-# GUI dependencies
-pillow
-requests
