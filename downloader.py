@@ -99,6 +99,8 @@ class VideoDownloader:
                 "skip_download": True,
                 "extract_flat": False,
                 "playlistend": 1,
+                # Allow yt-dlp to handle direct video URLs as generic downloads
+                "default_search": None,
             }
         )
 
@@ -106,6 +108,20 @@ class VideoDownloader:
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 return ydl.extract_info(url, download=False)
         except yt_dlp.utils.DownloadError as e:
+            # If yt-dlp can't extract info but it's a direct URL, create minimal info
+            err_msg = str(e).lower()
+            if "unsupported url" in err_msg and url.startswith("http"):
+                # Return minimal info for direct URLs that yt-dlp can still download
+                return {
+                    "title": os.path.basename(url.split("?")[0]) or "video",
+                    "uploader": "",
+                    "duration": None,
+                    "thumbnail": "",
+                    "webpage_url": url,
+                    "url": url,
+                    "formats": [],
+                    "entries": [],
+                }
             raise Exception(self._friendly_error(str(e), url)) from e
 
     # --------------------------------------------------------------- formats

@@ -216,7 +216,8 @@
           <div class="row">
             <input id="url" type="text" placeholder="https://youtube.com/watch?v=…  or  https://cdn.example/clip.mp4" autocomplete="off">
             <button class="btn ghost" id="paste">Paste</button>
-            <button class="btn" id="analyze">Analyze</button>
+            <button class="btn" id="downloadNow">Download Now</button>
+            <button class="btn ghost" id="analyze">Analyze</button>
           </div>
           <p class="hint" id="platform">Supports MP4, MKV, MOV, AVI, WMV, WebM · up to 8K</p>
         </div>
@@ -241,7 +242,6 @@
           </div>
           <div class="row" style="margin-top:14px">
             <button class="btn" id="download">Download</button>
-            <button class="btn ghost" id="addQueue">Add to queue</button>
             <button class="btn ghost" id="reset">Clear</button>
           </div>
         </div>
@@ -345,12 +345,15 @@ function detectPlatform(url) {
   if (u.includes("instagram")) return "Instagram";
   if (u.includes("twitter") || u.includes("x.com")) return "X / Twitter";
   if (u.includes("vimeo")) return "Vimeo";
-  if (u.startsWith("http")) return "Direct / web";
+  if (u.includes("facebook") || u.includes("fb.watch")) return "Facebook";
+  if (u.includes("twitch.tv")) return "Twitch";
+  if (u.includes("reddit.com") || u.includes("redd.it")) return "Reddit";
+  if (u.startsWith("http")) return "Direct URL / Any site";
   return "";
 }
 $("#url").addEventListener("input", () => {
   const p = detectPlatform($("#url").value);
-  $("#platform").textContent = p ? ("Detected: " + p) : "Supports MP4, MKV, MOV, AVI, WMV, WebM · up to 8K";
+  $("#platform").textContent = p ? ("Detected: " + p) : "Supports YouTube, Vimeo, TikTok, Instagram, Twitter, Facebook, Twitch, Reddit & direct URLs · up to 8K";
 });
 
 $("#paste").onclick = async () => {
@@ -382,6 +385,26 @@ $("#analyze").onclick = async () => {
   finally { $("#analyze").disabled = false; $("#analyze").textContent = "Analyze"; }
 };
 
+$("#downloadNow").onclick = async () => {
+  const url = $("#url").value.trim();
+  if (!url) return toast("Enter a URL first", "err");
+  $("#downloadNow").disabled = true; $("#downloadNow").textContent = "Starting…";
+  setStatus("Starting download…");
+  try {
+    const r = await fetch("api/download", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({url, format_id: null, title: url})
+    });
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.error || "failed");
+    startPolling(j.job_id);
+    refreshJobs();
+    toast("Download started and added to queue", "ok");
+    setStatus("Downloading…");
+  } catch (e) { toast(e.message, "err"); setStatus("Ready"); }
+  finally { $("#downloadNow").disabled = false; $("#downloadNow").textContent = "Download Now"; }
+};
+
 function fillFormats() {
   const sel = $("#fmt"); sel.innerHTML = "";
   let list = allFormats;
@@ -407,23 +430,25 @@ $("#reset").onclick = () => {
 };
 
 async function startDownload() {
-  if (!currentInfo) return;
   const url = $("#url").value.trim();
-  const format_id = $("#fmt").value;
+  if (!url) return toast("Enter a URL first", "err");
+  const format_id = ($("#fmt").value || "").trim() || null;
+  const title = currentInfo ? currentInfo.title : url;
   $("#download").disabled = true;
   try {
     const r = await fetch("api/download", {
       method:"POST", headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({url, format_id, title: currentInfo.title})
+      body: JSON.stringify({url, format_id, title})
     });
     const j = await r.json();
     if (!r.ok) throw new Error(j.error || "failed");
     startPolling(j.job_id);
     refreshJobs();
+    toast("Download started and added to queue", "ok");
+    setStatus("Downloading…");
   } catch (e) { toast(e.message, "err"); $("#download").disabled = false; }
 }
 $("#download").onclick = startDownload;
-$("#addQueue").onclick = startDownload;
 
 function startPolling(jid) {
   $("#progress").style.display = "block";
