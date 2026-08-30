@@ -210,7 +210,7 @@
     <main class="main">
       <section class="page active" id="page-download">
         <h1>New download</h1>
-        <p class="sub">Paste a link from YouTube, TikTok, Instagram, Vimeo, X, or a direct video URL.</p>
+        <p class="sub">Paste a link from YouTube, TikTok, Instagram, Vimeo, X, Twitch, or 1000+ other sites.</p>
 
         <div class="card">
           <div class="row">
@@ -240,8 +240,8 @@
             <select id="fmt"></select>
           </div>
           <div class="row" style="margin-top:14px">
-            <button class="btn" id="download">Download</button>
-            <button class="btn ghost" id="addQueue">Add to queue</button>
+            <button class="btn" id="download">Download Now</button>
+            <button class="btn ghost" id="addQueue">Add to Queue</button>
             <button class="btn ghost" id="reset">Clear</button>
           </div>
         </div>
@@ -406,7 +406,7 @@ $("#reset").onclick = () => {
   clearInterval(pollTimer);
 };
 
-async function startDownload() {
+async function startDownload(autoNavigate = false) {
   if (!currentInfo) return;
   const url = $("#url").value.trim();
   const format_id = $("#fmt").value;
@@ -418,12 +418,21 @@ async function startDownload() {
     });
     const j = await r.json();
     if (!r.ok) throw new Error(j.error || "failed");
-    startPolling(j.job_id);
-    refreshJobs();
+    // Auto-navigate to queue page if requested (e.g., from "Download Now" button)
+    if (autoNavigate) {
+      $$(".nav").forEach(x => x.classList.remove("active"));
+      $$("[data-page='queue']").forEach(x => x.classList.add("active"));
+      $$(".page").forEach(p => p.classList.remove("active"));
+      $("#page-queue").classList.add("active");
+      refreshJobs();
+    } else {
+      startPolling(j.job_id);
+      refreshJobs();
+    }
   } catch (e) { toast(e.message, "err"); $("#download").disabled = false; }
 }
-$("#download").onclick = startDownload;
-$("#addQueue").onclick = startDownload;
+$("#download").onclick = () => startDownload(true);  // Download Now -> go to queue
+$("#addQueue").onclick = () => startDownload(false); // Add to Queue -> stay on page
 
 function startPolling(jid) {
   $("#progress").style.display = "block";
